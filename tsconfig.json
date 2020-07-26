@@ -1,0 +1,8 @@
+{
+    "compilerOptions": {
+        "outDir": "dist",
+        "target": "ESNEXT",
+        "module": "AMD",
+    },
+    "include": ["src/**/*"]
+}

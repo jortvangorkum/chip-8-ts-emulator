@@ -1,0 +1,21 @@
+{
+  "name": "chip-8-ts-emulator",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "repository": "https://github.com/jortvangorkum/chip-8-ts-emulator.git",
+  "author": "Jort van Gorkum <jortvangorkum@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "nodemon -x yarn build --ext ts",
+    "build": "webpack"
+  },
+  "devDependencies": {
+    "@types/node": "^14.0.26",
+    "nodemon": "^2.0.4",
+    "ts-loader": "^8.0.1",
+    "typescript": "^3.9.7",
+    "webpack": "^4.44.0",
+    "webpack-cli": "^3.3.12"
+  }
+}

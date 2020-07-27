@@ -195,9 +195,8 @@ export default class CPU {
                 this.nextInstruction();
                 break;
             case 'ADD_VX_VY':
-                const addSum = this._clamp(this.registers[args[0]] + this.registers[args[1]], 8);
-                this.registers[args[0]] = addSum;
-                this.registers[0xF] = addSum > 0xFF ? 1 : 0;
+                this.registers[args[0]] += this.registers[args[1]];
+                this.registers[0xF] = this.registers[args[0]] + this.registers[args[1]] > 0xFF ? 1 : 0;
                 this.nextInstruction();
                 break;
             case 'SUB_VX_VY':

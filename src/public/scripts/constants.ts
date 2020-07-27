@@ -1,6 +1,6 @@
 export const DISPLAY_WIDTH = 64;
 export const DISPLAY_HEIGHT = 32;
-export const COLOR: string | CanvasGradient | CanvasPattern = 'white';
+export const COLOR: string | CanvasGradient | CanvasPattern = '#33FF33';
 
 export const KEY_MAP = [
     '1', '2', '3', '4',

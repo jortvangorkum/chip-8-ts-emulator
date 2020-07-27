@@ -206,17 +206,17 @@ export default class CPU {
                 this.nextInstruction();
                 break;
             case 'SHR_VX':
-                this.registers[args[0xF]] = this.registers[args[0]] & 1;
+                this.registers[0xF] = this.registers[args[0]] & 1;
                 this.registers[args[0]] >>= 1;
                 this.nextInstruction();
                 break;
             case 'SUBN_VX_VY':
-                this.registers[args[0xF]] = this.registers[args[1]] > this.registers[args[0]] ? 1 : 0;
+                this.registers[0xF] = this.registers[args[1]] > this.registers[args[0]] ? 1 : 0;
                 this.registers[args[0]] = this.registers[args[1]] - this.registers[args[0]];
                 this.nextInstruction();
                 break;
             case 'SHL_VX':
-                this.registers[args[0xF]] = this.registers[args[0]] >> 7;
+                this.registers[0xF] = this.registers[args[0]] >> 7;
                 this.registers[args[0]] <<= 1;
                 this.nextInstruction();
                 break;

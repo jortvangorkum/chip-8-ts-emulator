@@ -1,5 +1,5 @@
 import { dissamble, InstructionDecoded } from "./instruction_set.js";
-import { DISPLAY_WIDTH, DISPLAY_HEIGHT } from "./constants.js";
+import { DISPLAY_WIDTH, DISPLAY_HEIGHT, FONT_SPRITES } from "./constants.js";
 import CpuInterface from "./cpu_interface.js";
 import { RomBuffer } from "./rom_buffer.js";
 
@@ -78,7 +78,7 @@ export default class CPU {
     setIntialValues(): void {
         this.memory = new Uint8Array(4096);
         this.PC = 0x200;
-        this.registers = new Uint8Array(12);
+        this.registers = new Uint8Array(16);
         this.I = 0;
         this.SP = -1;
         this.stack = new Uint16Array(16);
@@ -89,20 +89,21 @@ export default class CPU {
     load(romBuffer: RomBuffer): void {
         this.setIntialValues();
 
+        for (let i = 0; i < FONT_SPRITES.length; i++) {
+            this.memory[i] = FONT_SPRITES[i];
+        }
+
         const memoryStart = 0x200;
 
         for (let i = 0; i < romBuffer.data.length; i++) {
             this.memory[memoryStart + 2 * i] = romBuffer.data[i] >> 8;
             this.memory[memoryStart + 2 * i + 1] = romBuffer.data[i] & 0x00FF;
         }
-
-        for (let i = 0; i < romBuffer.data.length; i++) {
-            console.log(((this.memory[this.PC + i] << 8) | (this.memory[this.PC + 1 + i] << 0)).toString(16));
-        }
     }
 
     step(): void {
         const opcode = this.fetch();
+        console.log(opcode.toString(16));
         const instruction = this.decode(opcode);
         this.execute(instruction);
     }
@@ -137,12 +138,9 @@ export default class CPU {
     private execute(instruction: InstructionDecoded) {
         const [id, args] = instruction;
 
-        console.log(id, args);
+        console.log(id, args.map(x => x.toString(16)));
 
         switch(id) {
-            case 'SYS_ADDR':
-                // Do Nothing
-                break;
             case 'CLS':
                 // Clear screen
                 this.cpuInterface.clearDisplay();
@@ -170,7 +168,7 @@ export default class CPU {
                 else { this.nextInstruction(); }
                 break;
             case 'SE_VX_VY':
-                if (this.registers[args[0]] !== this.registers[args[1]]) { this.skipInstruction(); }
+                if (this.registers[args[0]] === this.registers[args[1]]) { this.skipInstruction(); }
                 else { this.nextInstruction(); }
                 break;
             case 'LD_VX_KK':
@@ -209,8 +207,9 @@ export default class CPU {
                 this.nextInstruction();
                 break;
             case 'SHR_VX':
-                this.registers[args[0xF]] = this.registers[args[0]] & 1 ? 1 : 0;
+                this.registers[args[0xF]] = this.registers[args[0]] & 1;
                 this.registers[args[0]] >>= 1;
+                this.nextInstruction();
                 break;
             case 'SUBN_VX_VY':
                 this.registers[args[0xF]] = this.registers[args[1]] > this.registers[args[0]] ? 1 : 0;
@@ -238,6 +237,7 @@ export default class CPU {
                 this.nextInstruction();
                 break;
             case 'DRW_VX_VY_N':
+                this.registers[0xF] = 0;
                 for (let i = 0; i < args[2]; i++) {
                     const line = this.memory[this.I + i];
                     for (let position = 0; position < 8; position++) {
@@ -267,7 +267,6 @@ export default class CPU {
             case 'LD_VX_K':
                 const keyPress =  this.cpuInterface.waitKey();
                 if (!keyPress) { return; }
-
                 this.registers[args[0]] = keyPress;
                 this.nextInstruction();
                 break;
@@ -284,6 +283,7 @@ export default class CPU {
                 this.nextInstruction();
                 break;
             case 'LD_F_VX':
+                // The input is times 5 because the sprites take 5 bytes.
                 this.I = this.registers[args[0]] * 5;
                 this.nextInstruction();
                 break;

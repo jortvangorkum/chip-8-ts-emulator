@@ -22,7 +22,6 @@ async function loadRom() {
     const arrayBuffer = await response.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     const romBuffer = new RomBuffer(uint8Array);
-    console.log(romBuffer.data.map(x => x.toString(16)));
 
     cpu.cpuInterface.clearDisplay();
     cpu.load(romBuffer);

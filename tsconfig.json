@@ -2,7 +2,7 @@
     "compilerOptions": {
         "outDir": "dist",
         "target": "ESNEXT",
-        "module": "AMD",
+        "module": "CommonJs",
     },
     "include": ["src/**/*"]
 }

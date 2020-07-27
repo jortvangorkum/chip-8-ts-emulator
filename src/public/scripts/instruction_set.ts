@@ -22,6 +22,16 @@ interface InstructionArgument {
 
 export const INSTRUCTION_SET: Instruction[] = [
     {
+        key: 1,
+        id: 'SYS_ADDR',
+        name: 'SYS',
+        mask: 0xF000,
+        pattern: 0x0000,
+        arguments: [
+            { mask: 0x0FFF, shift: 0, type: 'N' }
+        ]
+    },
+    {
         key: 2,
         id: 'CLS',
         name: 'CLS',
@@ -256,7 +266,7 @@ export const INSTRUCTION_SET: Instruction[] = [
         id: 'DRW_VX_VY_N',
         name: 'RND',
         mask: 0xF000,
-        pattern: 0xC000,
+        pattern: 0xD000,
         arguments: [
             { mask: 0x0F00, shift: 8, type: 'R' },
             { mask: 0x0F00, shift: 4, type: 'R' },
@@ -381,6 +391,8 @@ export function dissamble(opcode: number): InstructionDecoded {
     const instruction = INSTRUCTION_SET.find(
         instruction => (opcode & instruction.mask) === instruction.pattern
     )
+
+    if (!instruction) { throw new Error('Instruction not found with opcode: ' + opcode.toString(16)); }
 
     const args = instruction.arguments.map(
         arg => (opcode & arg.mask) >> arg.shift

@@ -1,5 +1,5 @@
-import { DISPLAY_HEIGHT, DISPLAY_WIDTH, KEY_MAP, COLOR } from "./constants";
-import CpuInterface from "./cpu_interface";
+import { DISPLAY_HEIGHT, DISPLAY_WIDTH, KEY_MAP, COLOR } from "./constants.js";
+import CpuInterface from "./cpu_interface.js";
 
 export default class WebCpuInterface extends CpuInterface {
     frameBuffer: number[][];
@@ -12,10 +12,7 @@ export default class WebCpuInterface extends CpuInterface {
     constructor() {
         super();
 
-        console.log(document.childNodes);
-
         this.screen = <HTMLCanvasElement> document.getElementById('canvas');
-        console.log(this.screen);
 
         this.multiplierPixels = 10;
         this.screen.width = DISPLAY_WIDTH * this.multiplierPixels;

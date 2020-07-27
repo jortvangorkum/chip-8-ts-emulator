@@ -1,6 +1,7 @@
-import { dissamble, InstructionDecoded } from "./instruction_set";
-import { DISPLAY_WIDTH, DISPLAY_HEIGHT } from "./constants";
-import CpuInterface from "./cpu_interface";
+import { dissamble, InstructionDecoded } from "./instruction_set.js";
+import { DISPLAY_WIDTH, DISPLAY_HEIGHT } from "./constants.js";
+import CpuInterface from "./cpu_interface.js";
+import { RomBuffer } from "./rom_buffer.js";
 
 export default class CPU {
     /** 
@@ -71,10 +72,10 @@ export default class CPU {
 
     constructor(cpuInteface: CpuInterface) {
         this.cpuInterface = cpuInteface;
-        this.intialValues();
+        this.setIntialValues();
     }
 
-    intialValues(): void {
+    setIntialValues(): void {
         this.memory = new Uint8Array(4096);
         this.PC = 0x200;
         this.registers = new Uint8Array(12);
@@ -86,11 +87,18 @@ export default class CPU {
     }
 
     load(romBuffer: RomBuffer): void {
-        this.intialValues();
+        this.setIntialValues();
 
-        romBuffer.data.forEach((opcode, i) => {
-            this.memory[i] = opcode;
-        })
+        const memoryStart = 0x200;
+
+        for (let i = 0; i < romBuffer.data.length; i++) {
+            this.memory[memoryStart + 2 * i] = romBuffer.data[i] >> 8;
+            this.memory[memoryStart + 2 * i + 1] = romBuffer.data[i] & 0x00FF;
+        }
+
+        for (let i = 0; i < romBuffer.data.length; i++) {
+            console.log(((this.memory[this.PC + i] << 8) | (this.memory[this.PC + 1 + i] << 0)).toString(16));
+        }
     }
 
     step(): void {
@@ -99,21 +107,46 @@ export default class CPU {
         this.execute(instruction);
     }
 
+    tick(): void {
+        if (this.DT > 0) {
+            this.DT--;
+        }
+
+        if (this.ST > 0) {
+            this.ST--;
+        }
+    }
+
     private fetch(): number {
-        return this.memory[this.PC];
+        return ((this.memory[this.PC] << 8) | (this.memory[this.PC + 1] << 0));
     }
 
     private decode(opcode: number): InstructionDecoded {
         return dissamble(opcode);
     }
 
+    private nextInstruction() {
+        this.PC += 2;
+    }
+
+    private skipInstruction() {
+        this.nextInstruction();
+        this.nextInstruction();
+    }
+
     private execute(instruction: InstructionDecoded) {
         const [id, args] = instruction;
 
+        console.log(id, args);
+
         switch(id) {
+            case 'SYS_ADDR':
+                // Do Nothing
+                break;
             case 'CLS':
                 // Clear screen
                 this.cpuInterface.clearDisplay();
+                this.nextInstruction();
                 break;
             case 'RET':
                 this.PC = this.stack[this.SP];
@@ -124,45 +157,56 @@ export default class CPU {
                 break;
             case 'CALL_ADDR':
                 this.SP++;
-                // Do not know why the program counter is added with plus 2
+                // Puts the next instruction on the top of the stack
                 this.stack[this.SP] = this.PC + 2;
                 this.PC = args[0];
                 break;
             case 'SE_VX_KK':
-                if (this.registers[args[0]] === args[1]) { this.PC += 2; }
+                if (this.registers[args[0]] === args[1]) { this.skipInstruction(); }
+                else { this.nextInstruction(); }
                 break;
             case 'SNE_VX_KK':
-                if (this.registers[args[0]] !== args[1]) { this.PC += 2; }
+                if (this.registers[args[0]] !== args[1]) { this.skipInstruction(); }
+                else { this.nextInstruction(); }
                 break;
             case 'SE_VX_VY':
-                if (this.registers[args[0]] !== this.registers[args[1]]) { this.PC += 2; }
+                if (this.registers[args[0]] !== this.registers[args[1]]) { this.skipInstruction(); }
+                else { this.nextInstruction(); }
                 break;
             case 'LD_VX_KK':
                 this.registers[args[0]] = args[1];
+                this.nextInstruction();
                 break;
             case 'ADD_VX_KK':
                 this.registers[args[0]] += this._clamp(args[1], 8);
+                this.nextInstruction();
                 break;
             case 'LD_VX_VY':
                 this.registers[args[0]] = this.registers[args[1]];
+                this.nextInstruction();
                 break;
             case 'OR_VX_VY':
                 this.registers[args[0]] |= this.registers[args[1]];
+                this.nextInstruction();
                 break;
             case 'AND_VX_VY':
                 this.registers[args[0]] &= this.registers[args[1]];
+                this.nextInstruction();
                 break;
             case 'XOR_VX_VY':
                 this.registers[args[0]] ^= this.registers[args[1]];
+                this.nextInstruction();
                 break;
             case 'ADD_VX_VY':
                 const addSum = this._clamp(this.registers[args[0]] + this.registers[args[1]], 8);
                 this.registers[args[0]] = addSum;
                 this.registers[0xF] = addSum > 0xFF ? 1 : 0;
+                this.nextInstruction();
                 break;
             case 'SUB_VX_VY':
                 this.registers[args[0xF]] = this.registers[args[0]] > this.registers[args[1]] ? 1 : 0;
                 this.registers[args[0]] -= this.registers[args[1]];
+                this.nextInstruction();
                 break;
             case 'SHR_VX':
                 this.registers[args[0xF]] = this.registers[args[0]] & 1 ? 1 : 0;
@@ -171,22 +215,27 @@ export default class CPU {
             case 'SUBN_VX_VY':
                 this.registers[args[0xF]] = this.registers[args[1]] > this.registers[args[0]] ? 1 : 0;
                 this.registers[args[0]] = this.registers[args[1]] - this.registers[args[0]];
+                this.nextInstruction();
                 break;
             case 'SHL_VX':
                 this.registers[args[0xF]] = this.registers[args[0]] >> 7;
                 this.registers[args[0]] <<= 1;
+                this.nextInstruction();
                 break;
             case 'SNE_VX_VY':
-                if (this.registers[args[0]] !== this.registers[args[1]]) { this.PC += 2; }
+                if (this.registers[args[0]] !== this.registers[args[1]]) { this.skipInstruction(); }
+                else { this.nextInstruction(); }
                 break;
             case 'LD_I_ADDR':
                 this.I = args[0];
+                this.nextInstruction();
                 break;
             case 'JP_V0_ADDR':
                 this.PC = args[0] + this.registers[0];
                 break;
             case 'RND_VX_KK':
                 this.registers[args[0]] = Math.floor(Math.random() * 0xFF) & args[1];
+                this.nextInstruction();
                 break;
             case 'DRW_VX_VY_N':
                 for (let i = 0; i < args[2]; i++) {
@@ -201,30 +250,42 @@ export default class CPU {
                         }
                     }
                 }
+                this.nextInstruction();
                 break;
             case 'SKP_VX':
-                if (this.cpuInterface.getKeys() & (1 << this.registers[args[0]])) { this.PC += 2; }
+                if (this.cpuInterface.getKeys() & (1 << this.registers[args[0]])) { this.skipInstruction(); }
+                else { this.nextInstruction(); }
                 break;
             case 'SKNP_VX':
-                if (!(this.cpuInterface.getKeys() & (1 << this.registers[args[0]]))) { this.PC += 2; }
+                if (!(this.cpuInterface.getKeys() & (1 << this.registers[args[0]]))) { this.skipInstruction(); }
+                else { this.nextInstruction(); }
                 break;
             case 'LD_VX_DT':
                 this.registers[args[0]] = this.DT;
+                this.nextInstruction();
                 break;
             case 'LD_VX_K':
-                this.registers[args[0]] = this.cpuInterface.waitKey();
+                const keyPress =  this.cpuInterface.waitKey();
+                if (!keyPress) { return; }
+
+                this.registers[args[0]] = keyPress;
+                this.nextInstruction();
                 break;
             case 'LD_DT_VX':
                 this.DT = this.registers[args[0]];
+                this.nextInstruction();
                 break;
             case 'LD_ST_VX':
                 this.ST = this.registers[args[0]];
+                this.nextInstruction();
                 break;
             case 'ADD_I_VX':
                 this.I += this.registers[args[0]];
+                this.nextInstruction();
                 break;
             case 'LD_F_VX':
                 this.I = this.registers[args[0]] * 5;
+                this.nextInstruction();
                 break;
             case 'LD_B_VX':
                 let x = this.registers[args[0]];
@@ -237,16 +298,19 @@ export default class CPU {
                 this.memory[this.I] = a;
                 this.memory[this.I + 1] = b;
                 this.memory[this.I + 2] = c;
+                this.nextInstruction();
                 break;
             case 'LD_I_VX':
                 for (let i = 0; i < args[0]; i++) {
                     this.memory[this.I + i] = this.registers[i];
                 }
+                this.nextInstruction();
                 break;
             case 'LD_VX_I':
                 for (let i = 0; i < args[0]; i++) {
                     this.registers[i] = this.memory[this.I + i];
                 }
+                this.nextInstruction();
                 break;
             default:
                 throw new Error('No execution found for instruction id: ' + id);

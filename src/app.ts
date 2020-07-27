@@ -1,11 +1,10 @@
-import * as express from 'express'
+const express = require('express');
 
 const app = express();
 const port = 3000;
 
-app.get('/', (req, res) => {
-    res.send('Hello World!');
-})
+app.use('/', express.static(__dirname + '/public'));
+app.use('/roms', express.static('roms'));
 
 app.listen(port, () => {
     console.log(`Listening on port: ${port}`);

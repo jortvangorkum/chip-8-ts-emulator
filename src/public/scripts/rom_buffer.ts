@@ -1,4 +1,4 @@
-class RomBuffer {
+export class RomBuffer {
     /** 16-bit big endian opcodes from the buffer */
     data: number[];
 

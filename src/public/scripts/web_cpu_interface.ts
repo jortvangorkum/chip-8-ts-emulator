@@ -12,7 +12,7 @@ export default class WebCpuInterface extends CpuInterface {
     constructor() {
         super();
 
-        this.screen = <HTMLCanvasElement> document.getElementById('canvas');
+        this.screen = document.querySelector('canvas');
 
         this.multiplierPixels = 10;
         this.screen.width = DISPLAY_WIDTH * this.multiplierPixels;
@@ -83,6 +83,7 @@ export default class WebCpuInterface extends CpuInterface {
     }
 
     drawPixel(value: number, x: number, y: number): number {
+        const collision = this.frameBuffer[y][x] & value;
         this.frameBuffer[y][x] ^= value;
 
         if (this.frameBuffer[y][x]) {
@@ -103,6 +104,6 @@ export default class WebCpuInterface extends CpuInterface {
             );
         }
 
-        return this.frameBuffer[y][x] & value;
+        return collision;
     }
 }

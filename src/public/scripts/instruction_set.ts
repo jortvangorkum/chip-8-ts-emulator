@@ -181,7 +181,7 @@ export const INSTRUCTION_SET: Instruction[] = [
     {
         key: 17,
         id: 'SHR_VX',
-        name: 'SUB',
+        name: 'SHR',
         mask: 0xF00F,
         pattern: 0x8006,
         arguments: [

@@ -6,7 +6,7 @@ export class RomBuffer {
         this.data = []
 
         for (let i = 0; i < buffer.length; i += 2) {
-            this.data.push((buffer[i] << 8) | (buffer[i+1] << 0));
+            this.data.push((buffer[i] << 8) | (buffer[i + 1] << 0));
         }
     }
 }

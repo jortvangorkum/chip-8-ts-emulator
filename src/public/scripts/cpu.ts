@@ -103,7 +103,6 @@ export default class CPU {
 
     step(): void {
         const opcode = this.fetch();
-        console.log(opcode.toString(16));
         const instruction = this.decode(opcode);
         this.execute(instruction);
     }
@@ -202,8 +201,8 @@ export default class CPU {
                 this.nextInstruction();
                 break;
             case 'SUB_VX_VY':
-                this.registers[args[0xF]] = this.registers[args[0]] > this.registers[args[1]] ? 1 : 0;
-                this.registers[args[0]] -= this.registers[args[1]];
+                this.registers[0xf] = this.registers[args[0]] > this.registers[args[1]] ? 1 : 0
+                this.registers[args[0]] -= this.registers[args[1]]
                 this.nextInstruction();
                 break;
             case 'SHR_VX':
@@ -230,7 +229,7 @@ export default class CPU {
                 this.nextInstruction();
                 break;
             case 'JP_V0_ADDR':
-                this.PC = args[0] + this.registers[0];
+                this.PC = this.registers[0] + args[0];
                 break;
             case 'RND_VX_KK':
                 this.registers[args[0]] = Math.floor(Math.random() * 0xFF) & args[1];
@@ -320,7 +319,7 @@ export default class CPU {
     /** Clamps value given the max bit size */
     _clamp(value: number, bitSize: number) {
         const size = 2 ** bitSize;
-        if (value > size) {
+        if (value >= size) {
             return value - size;
         }
         return value;
